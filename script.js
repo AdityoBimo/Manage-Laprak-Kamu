@@ -67,8 +67,8 @@ function render() {
   if (courses.length === 0) {
     list.innerHTML = `
       <div class="empty">
-        <h3>Belum ada mata kuliah</h3>
-        <p>Tambah mata kuliah pertama lo buat mulai tracking.</p>
+        <h3>Belum ada mata kuliah ceunah</h3>
+        <p>Tambahin praktikum nya yuk teman - teman.</p>
       </div>
     `;
     return;
