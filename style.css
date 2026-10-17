@@ -355,9 +355,12 @@ input:focus-visible {
   background: var(--tint);
   border-color: transparent;
 }
-.meeting.done span {
-  color: var(--muted);
-  text-decoration: line-through;
+.meeting.done {
+  opacity: 0.6;
+}
+.meeting.done:hover,
+.meeting.done:focus-within {
+  opacity: 1;
 }
 
 .empty {
