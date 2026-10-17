@@ -332,7 +332,8 @@ input:focus-visible {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  flex-wrap: wrap;
+  gap: 8px 12px;
   padding: 10px 14px;
   border: 1px solid var(--line);
   border-radius: 12px;
@@ -394,8 +395,8 @@ input:focus-visible {
   display: flex;
   align-items: center;
   gap: 12px;
-  flex: 1;
-  min-width: 0;
+  flex: 1 1 130px;
+  min-width: 130px;
   padding: 4px 0;
   cursor: pointer;
 }
@@ -403,8 +404,54 @@ input:focus-visible {
 .meeting-link {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
   gap: 8px;
-  flex-shrink: 0;
+}
+
+.meeting-files {
+  flex-basis: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 2px 0 4px;
+}
+
+.file-chip {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  background: var(--tint);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+button.file-open,
+button.file-del {
+  background: transparent;
+  color: var(--ink);
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  min-height: 0;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 9px;
+}
+
+button.file-open {
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+button.file-del {
+  color: var(--muted);
+  border-left: 1px solid var(--line);
+}
+button.file-del:hover {
+  color: var(--accent);
 }
 
 button.mini {

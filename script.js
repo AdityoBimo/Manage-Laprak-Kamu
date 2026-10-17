@@ -4,7 +4,14 @@ let courses = loadCourses();
 let editingId = null;
 let activeCourseId = null;
 
-const $ = selector => document.querySelector(selector);
+const DB_NAME = "laprak-files-v1";
+const STORE = "files";
+const MAX_FILE = 10 * 1024 * 1024;
+
+let fileCache = [];
+let pendingMeeting = null;
+
+const $ = (selector) => document.querySelector(selector);
 
 function loadCourses() {
   try {
@@ -18,8 +25,85 @@ function saveCourses() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(courses));
 }
 
+let dbPromise;
+
+function openDB() {
+  dbPromise ||= new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, 1);
+
+    request.onupgradeneeded = () => {
+      request.result
+        .createObjectStore(STORE, { keyPath: "id" })
+        .createIndex("courseId", "courseId");
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+
+  return dbPromise;
+}
+
+function tx(mode, run) {
+  return openDB().then(
+    (db) =>
+      new Promise((resolve, reject) => {
+        const t = db.transaction(STORE, mode);
+        const request = run(t.objectStore(STORE));
+
+        t.oncomplete = () => resolve(request?.result);
+        t.onerror = t.onabort = () => reject(t.error);
+      }),
+  );
+}
+
+const putFile = (record) => tx("readwrite", (s) => s.put(record));
+const removeFile = (id) => tx("readwrite", (s) => s.delete(id));
+const filesOfCourse = (id) =>
+  tx("readonly", (s) => s.index("courseId").getAll(id));
+const allFiles = () => tx("readonly", (s) => s.getAll());
+
+async function deleteFilesWhere(courseId, test) {
+  const files = await filesOfCourse(courseId);
+  await Promise.all(files.filter(test).map((file) => removeFile(file.id)));
+}
+
+function newId() {
+  return crypto.randomUUID
+    ? crypto.randomUUID()
+    : String(Date.now() + Math.random());
+}
+
+function formatSize(bytes) {
+  return bytes < 1024 * 1024
+    ? `${Math.max(1, Math.round(bytes / 1024))} KB`
+    : `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
+
+async function updateStorageInfo() {
+  try {
+    const total = (await allFiles()).reduce((sum, file) => sum + file.size, 0);
+    $("#storageInfo").textContent =
+      `Total file tersimpan di browser: ${formatSize(total)}`;
+  } catch {
+    $("#storageInfo").textContent = "";
+  }
+}
+
+async function loadFiles(id) {
+  try {
+    const files = await filesOfCourse(id);
+    if (activeCourseId !== id) return;
+    fileCache = files;
+    renderMeetings();
+  } catch {
+    $("#storageInfo").textContent =
+      "Penyimpanan file tidak tersedia di browser ini.";
+  }
+  updateStorageInfo();
+}
+
 function getCourse(id) {
-  return courses.find(course => course.id === id);
+  return courses.find((course) => course.id === id);
 }
 
 function completedCount(course) {
@@ -28,33 +112,39 @@ function completedCount(course) {
 
 function percentage(course) {
   return course.meetings.length
-    ? Math.round(completedCount(course) / course.meetings.length * 100)
+    ? Math.round((completedCount(course) / course.meetings.length) * 100)
     : 0;
 }
 
 function escapeHTML(value) {
-  return String(value).replace(/[&<>"']/g, char => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#039;"
-  })[char]);
+  return String(value).replace(
+    /[&<>"']/g,
+    (char) =>
+      ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;",
+      })[char],
+  );
 }
 
 function render() {
   const totalMeetings = courses.reduce(
-    (sum, course) => sum + course.meetings.length, 0
+    (sum, course) => sum + course.meetings.length,
+    0,
   );
 
   const totalDone = courses.reduce(
-    (sum, course) => sum + completedCount(course), 0
+    (sum, course) => sum + completedCount(course),
+    0,
   );
 
   $("#courseCount").textContent = courses.length;
   $("#doneCount").textContent = `${totalDone}/${totalMeetings}`;
   $("#overallProgress").textContent =
-    `${totalMeetings ? Math.round(totalDone / totalMeetings * 100) : 0}%`;
+    `${totalMeetings ? Math.round((totalDone / totalMeetings) * 100) : 0}%`;
 
   const list = $("#courseList");
 
@@ -68,12 +158,13 @@ function render() {
     return;
   }
 
-  list.innerHTML = courses.map(course => {
-    const done = completedCount(course);
-    const progress = percentage(course);
-    const next = course.meetings.indexOf(false);
+  list.innerHTML = courses
+    .map((course) => {
+      const done = completedCount(course);
+      const progress = percentage(course);
+      const next = course.meetings.indexOf(false);
 
-    return `
+      return `
       <article class="course-card ${progress === 100 ? "complete" : ""}">
         <div class="course-top">
           <div>
@@ -90,9 +181,11 @@ function render() {
         </div>
 
         <span class="muted">
-          ${progress === 100
-            ? "🎉 Semua pertemuan beres!"
-            : `Berikutnya: Pertemuan ${next + 1}`}
+          ${
+            progress === 100
+              ? "🎉 Semua pertemuan beres!"
+              : `Berikutnya: Pertemuan ${next + 1}`
+          }
         </span>
 
         <div class="card-actions">
@@ -104,14 +197,16 @@ function render() {
         </div>
       </article>
     `;
-  }).join("");
+    })
+    .join("");
 }
 
 function openCourseForm(course = null) {
   editingId = course?.id ?? null;
 
-  $("#courseModalTitle").textContent =
-    course ? "Edit mata kuliah" : "Tambah mata kuliah";
+  $("#courseModalTitle").textContent = course
+    ? "Edit mata kuliah"
+    : "Tambah mata kuliah";
 
   $("#courseName").value = course?.name ?? "";
   $("#meetingCount").value = course?.meetings.length ?? 14;
@@ -129,7 +224,7 @@ function closeCourseForm() {
 $("#addButton").addEventListener("click", () => openCourseForm());
 $("#cancelCourse").addEventListener("click", closeCourseForm);
 
-$("#courseForm").addEventListener("submit", event => {
+$("#courseForm").addEventListener("submit", (event) => {
   event.preventDefault();
 
   const name = $("#courseName").value.trim();
@@ -148,20 +243,21 @@ $("#courseForm").addEventListener("submit", event => {
     course.name = name;
     course.meetings = Array.from(
       { length: count },
-      (_, index) => oldMeetings[index] ?? false
+      (_, index) => oldMeetings[index] ?? false,
     );
     course.links = Array.from(
       { length: count },
-      (_, index) => oldLinks[index] ?? ""
+      (_, index) => oldLinks[index] ?? "",
+    );
+    deleteFilesWhere(course.id, (file) => file.meeting >= count).catch(
+      () => {},
     );
   } else {
     courses.push({
-      id: crypto.randomUUID
-        ? crypto.randomUUID()
-        : String(Date.now()),
+      id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
       name,
       meetings: Array(count).fill(false),
-      links: Array(count).fill("")
+      links: Array(count).fill(""),
     });
   }
 
@@ -178,7 +274,9 @@ function openMeetings(id) {
   $("#meetingTitle").textContent = course.name;
   $("#meetingModal").classList.add("show");
 
+  fileCache = [];
   renderMeetings();
+  loadFiles(id);
 }
 
 function renderMeetings() {
@@ -193,10 +291,12 @@ function renderMeetings() {
   $("#meetingSummary").textContent =
     `${completedCount(course)} dari ${course.meetings.length} selesai`;
 
-  $("#meetingList").innerHTML = course.meetings.map((done, index) => {
-    const link = course.links?.[index] || "";
+  $("#meetingList").innerHTML = course.meetings
+    .map((done, index) => {
+      const link = course.links?.[index] || "";
+      const files = fileCache.filter((file) => file.meeting === index);
 
-    return `
+      return `
       <div class="meeting ${done ? "done" : ""}">
         <label class="meeting-check">
           <input type="checkbox" data-meeting="${index}"
@@ -205,19 +305,49 @@ function renderMeetings() {
         </label>
 
         <div class="meeting-link">
-          ${link
-            ? `<a class="open-link" href="${escapeHTML(link)}"
+          ${
+            link
+              ? `<a class="open-link" href="${escapeHTML(link)}"
                  target="_blank" rel="noopener noreferrer">Buka</a>`
-            : ""}
+              : ""
+          }
           <button type="button" class="secondary mini"
             data-link="${index}">${link ? "Ubah" : "+ Link"}</button>
+          <button type="button" class="secondary mini"
+            data-upload="${index}">Upload</button>
         </div>
+
+        ${
+          files.length
+            ? `
+          <div class="meeting-files">
+            ${files
+              .map(
+                (file) => `
+              <span class="file-chip">
+                <button type="button" class="file-open"
+                  data-file-open="${file.id}"
+                  title="${escapeHTML(file.name)}">
+                  ${escapeHTML(file.name)} · ${formatSize(file.size)}
+                </button>
+                <button type="button" class="file-del"
+                  data-file-del="${file.id}"
+                  aria-label="Hapus file">✕</button>
+              </span>
+            `,
+              )
+              .join("")}
+          </div>
+        `
+            : ""
+        }
       </div>
     `;
-  }).join("");
+    })
+    .join("");
 }
 
-$("#courseList").addEventListener("click", event => {
+$("#courseList").addEventListener("click", (event) => {
   const button = event.target.closest("button[data-action]");
   if (!button) return;
 
@@ -228,15 +358,15 @@ $("#courseList").addEventListener("click", event => {
   if (action === "open") openMeetings(id);
   if (action === "edit") openCourseForm(course);
 
-  if (action === "delete" &&
-      confirm(`Hapus mata kuliah "${course.name}"?`)) {
-    courses = courses.filter(item => item.id !== id);
+  if (action === "delete" && confirm(`Hapus mata kuliah "${course.name}"?`)) {
+    deleteFilesWhere(id, () => true).catch(() => {});
+    courses = courses.filter((item) => item.id !== id);
     saveCourses();
     render();
   }
 });
 
-$("#meetingList").addEventListener("change", event => {
+$("#meetingList").addEventListener("change", (event) => {
   const checkbox = event.target;
 
   if (!checkbox.matches("input[data-meeting]")) return;
@@ -275,7 +405,7 @@ function cleanURL(value) {
   }
 }
 
-$("#meetingList").addEventListener("click", event => {
+$("#meetingList").addEventListener("click", (event) => {
   const button = event.target.closest("button[data-link]");
   if (!button) return;
 
@@ -285,12 +415,12 @@ $("#meetingList").addEventListener("click", event => {
   const index = Number(button.dataset.link);
   course.links = Array.from(
     { length: course.meetings.length },
-    (_, i) => course.links?.[i] ?? ""
+    (_, i) => course.links?.[i] ?? "",
   );
 
   const input = prompt(
     `Tempel link laporan Pertemuan ${index + 1} (kosongkan untuk hapus):`,
-    course.links[index]
+    course.links[index],
   );
   if (input === null) return;
 
@@ -305,23 +435,110 @@ $("#meetingList").addEventListener("click", event => {
   renderMeetings();
 });
 
+$("#meetingList").addEventListener("click", async (event) => {
+  const upload = event.target.closest("button[data-upload]");
+  const open = event.target.closest("button[data-file-open]");
+  const del = event.target.closest("button[data-file-del]");
+
+  if (upload) {
+    pendingMeeting = Number(upload.dataset.upload);
+    $("#fileInput").click();
+  }
+
+  if (open) {
+    const file = fileCache.find((item) => item.id === open.dataset.fileOpen);
+    if (!file) return;
+
+    const url = URL.createObjectURL(file.blob);
+    const viewable = /^(application\/pdf|image\/|text\/)/.test(file.type);
+
+    if (viewable) {
+      window.open(url, "_blank", "noopener");
+    } else {
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = file.name;
+      link.click();
+    }
+
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  }
+
+  if (del) {
+    const file = fileCache.find((item) => item.id === del.dataset.fileDel);
+    if (!file || !confirm(`Hapus file "${file.name}"?`)) return;
+
+    try {
+      await removeFile(file.id);
+      fileCache = fileCache.filter((item) => item.id !== file.id);
+      renderMeetings();
+      updateStorageInfo();
+    } catch {
+      alert("Gagal menghapus file.");
+    }
+  }
+});
+
+$("#fileInput").addEventListener("change", async (event) => {
+  const picked = [...event.target.files];
+  event.target.value = "";
+
+  const course = getCourse(activeCourseId);
+  if (!course || pendingMeeting === null || !picked.length) return;
+
+  const tooBig = picked.filter((file) => file.size > MAX_FILE);
+  const valid = picked.filter((file) => file.size <= MAX_FILE);
+
+  if (tooBig.length) {
+    alert(
+      `Ukuran maksimal 10 MB per file. Dilewati: ${tooBig.map((f) => f.name).join(", ")}`,
+    );
+  }
+
+  navigator.storage?.persist?.();
+
+  try {
+    for (const file of valid) {
+      const record = {
+        id: newId(),
+        courseId: course.id,
+        meeting: pendingMeeting,
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        blob: file,
+        added: Date.now(),
+      };
+
+      await putFile(record);
+      fileCache.push(record);
+    }
+  } catch {
+    alert("Gagal menyimpan file. Penyimpanan browser mungkin penuh.");
+  }
+
+  renderMeetings();
+  updateStorageInfo();
+});
+
 function closeMeetingModal() {
   $("#meetingModal").classList.remove("show");
   activeCourseId = null;
+  fileCache = [];
 }
 
 $("#closeMeeting").addEventListener("click", closeMeetingModal);
 $("#doneMeeting").addEventListener("click", closeMeetingModal);
 
-$("#courseModal").addEventListener("click", event => {
+$("#courseModal").addEventListener("click", (event) => {
   if (event.target === $("#courseModal")) closeCourseForm();
 });
 
-$("#meetingModal").addEventListener("click", event => {
+$("#meetingModal").addEventListener("click", (event) => {
   if (event.target === $("#meetingModal")) closeMeetingModal();
 });
 
-document.addEventListener("keydown", event => {
+document.addEventListener("keydown", (event) => {
   if (event.key !== "Escape") return;
   closeCourseForm();
   closeMeetingModal();
@@ -332,14 +549,16 @@ $("#themeButton").addEventListener("click", () => {
 
   localStorage.setItem(
     "laprak-theme",
-    document.body.classList.contains("dark") ? "dark" : "light"
+    document.body.classList.contains("dark") ? "dark" : "light",
   );
 });
 
 const savedTheme = localStorage.getItem("laprak-theme");
 
-if (savedTheme === "dark" ||
-    (!savedTheme && matchMedia("(prefers-color-scheme: dark)").matches)) {
+if (
+  savedTheme === "dark" ||
+  (!savedTheme && matchMedia("(prefers-color-scheme: dark)").matches)
+) {
   document.body.classList.add("dark");
 }
 

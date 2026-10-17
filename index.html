@@ -18,7 +18,7 @@
     <main class="container">
       <header>
         <div>
-          <h1>Management <mark>Laprak</mark> Kamu </h1>
+          <h1>Di <mark>Laprakin</mark> aja</h1>
           <p>Pantau progres laporan praktikum kamu selama satu semester.</p>
         </div>
         <button
@@ -58,7 +58,7 @@
       </section>
     </main>
 
-    <!-- tambah edit matkul ceunahh -->
+    <!-- Modal tambah/edit mata kuliah -->
     <div class="modal-backdrop" id="courseModal">
       <div class="modal">
         <h2 id="courseModalTitle">Tambah mata kuliah</h2>
@@ -97,11 +97,19 @@
       </div>
     </div>
 
-    <!-- checklist -->
+    <!-- Modal checklist pertemuan -->
     <div class="modal-backdrop" id="meetingModal">
       <div class="modal">
         <h2 id="meetingTitle">Checklist pertemuan</h2>
         <p id="meetingSummary" class="muted"></p>
+        <p id="storageInfo" class="muted"></p>
+        <input
+          type="file"
+          id="fileInput"
+          multiple
+          hidden
+          accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.zip,.rar,.png,.jpg,.jpeg"
+        />
 
         <div class="meeting-list" id="meetingList"></div>
 
