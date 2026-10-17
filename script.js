@@ -4,7 +4,7 @@ let courses = loadCourses();
 let editingId = null;
 let activeCourseId = null;
 
-const $ = (selector) => document.querySelector(selector);
+const $ = selector => document.querySelector(selector);
 
 function loadCourses() {
   try {
@@ -19,7 +19,7 @@ function saveCourses() {
 }
 
 function getCourse(id) {
-  return courses.find((course) => course.id === id);
+  return courses.find(course => course.id === id);
 }
 
 function completedCount(course) {
@@ -28,59 +28,52 @@ function completedCount(course) {
 
 function percentage(course) {
   return course.meetings.length
-    ? Math.round((completedCount(course) / course.meetings.length) * 100)
+    ? Math.round(completedCount(course) / course.meetings.length * 100)
     : 0;
 }
 
 function escapeHTML(value) {
-  return String(value).replace(
-    /[&<>"']/g,
-    (char) =>
-      ({
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#039;",
-      })[char],
-  );
+  return String(value).replace(/[&<>"']/g, char => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#039;"
+  })[char]);
 }
 
 function render() {
   const totalMeetings = courses.reduce(
-    (sum, course) => sum + course.meetings.length,
-    0,
+    (sum, course) => sum + course.meetings.length, 0
   );
 
   const totalDone = courses.reduce(
-    (sum, course) => sum + completedCount(course),
-    0,
+    (sum, course) => sum + completedCount(course), 0
   );
 
   $("#courseCount").textContent = courses.length;
   $("#doneCount").textContent = `${totalDone}/${totalMeetings}`;
   $("#overallProgress").textContent =
-    `${totalMeetings ? Math.round((totalDone / totalMeetings) * 100) : 0}%`;
+    `${totalMeetings ? Math.round(totalDone / totalMeetings * 100) : 0}%`;
 
   const list = $("#courseList");
 
   if (courses.length === 0) {
     list.innerHTML = `
       <div class="empty">
-        <h3>Belum ada mata kuliah ceunah</h3>
-        <p>Tambahin praktikum nya yuk teman - teman.</p>
+        <h3>Belum ada mata kuliah</h3>
+        <p>Tambah mata kuliah pertama lo buat mulai tracking.</p>
       </div>
     `;
     return;
   }
 
-  list.innerHTML = courses
-    .map((course) => {
-      const done = completedCount(course);
-      const progress = percentage(course);
-      const next = course.meetings.indexOf(false);
+  list.innerHTML = courses.map(course => {
+    const done = completedCount(course);
+    const progress = percentage(course);
+    const next = course.meetings.indexOf(false);
 
-      return `
+    return `
       <article class="course-card ${progress === 100 ? "complete" : ""}">
         <div class="course-top">
           <div>
@@ -97,11 +90,9 @@ function render() {
         </div>
 
         <span class="muted">
-          ${
-            progress === 100
-              ? "🎉 Semua pertemuan beres!"
-              : `Berikutnya: Pertemuan ${next + 1}`
-          }
+          ${progress === 100
+            ? "🎉 Semua pertemuan beres!"
+            : `Berikutnya: Pertemuan ${next + 1}`}
         </span>
 
         <div class="card-actions">
@@ -113,16 +104,14 @@ function render() {
         </div>
       </article>
     `;
-    })
-    .join("");
+  }).join("");
 }
 
 function openCourseForm(course = null) {
   editingId = course?.id ?? null;
 
-  $("#courseModalTitle").textContent = course
-    ? "Edit mata kuliah"
-    : "Tambah mata kuliah";
+  $("#courseModalTitle").textContent =
+    course ? "Edit mata kuliah" : "Tambah mata kuliah";
 
   $("#courseName").value = course?.name ?? "";
   $("#meetingCount").value = course?.meetings.length ?? 14;
@@ -140,7 +129,7 @@ function closeCourseForm() {
 $("#addButton").addEventListener("click", () => openCourseForm());
 $("#cancelCourse").addEventListener("click", closeCourseForm);
 
-$("#courseForm").addEventListener("submit", (event) => {
+$("#courseForm").addEventListener("submit", event => {
   event.preventDefault();
 
   const name = $("#courseName").value.trim();
@@ -154,17 +143,25 @@ $("#courseForm").addEventListener("submit", (event) => {
   if (editingId) {
     const course = getCourse(editingId);
     const oldMeetings = course.meetings;
+    const oldLinks = course.links ?? [];
 
     course.name = name;
     course.meetings = Array.from(
       { length: count },
-      (_, index) => oldMeetings[index] ?? false,
+      (_, index) => oldMeetings[index] ?? false
+    );
+    course.links = Array.from(
+      { length: count },
+      (_, index) => oldLinks[index] ?? ""
     );
   } else {
     courses.push({
-      id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
+      id: crypto.randomUUID
+        ? crypto.randomUUID()
+        : String(Date.now()),
       name,
       meetings: Array(count).fill(false),
+      links: Array(count).fill("")
     });
   }
 
@@ -196,20 +193,31 @@ function renderMeetings() {
   $("#meetingSummary").textContent =
     `${completedCount(course)} dari ${course.meetings.length} selesai`;
 
-  $("#meetingList").innerHTML = course.meetings
-    .map(
-      (done, index) => `
-    <label class="meeting ${done ? "done" : ""}">
-      <input type="checkbox" data-meeting="${index}"
-        ${done ? "checked" : ""}>
-      <span>Pertemuan ${index + 1}</span>
-    </label>
-  `,
-    )
-    .join("");
+  $("#meetingList").innerHTML = course.meetings.map((done, index) => {
+    const link = course.links?.[index] || "";
+
+    return `
+      <div class="meeting ${done ? "done" : ""}">
+        <label class="meeting-check">
+          <input type="checkbox" data-meeting="${index}"
+            ${done ? "checked" : ""}>
+          <span>Pertemuan ${index + 1}</span>
+        </label>
+
+        <div class="meeting-link">
+          ${link
+            ? `<a class="open-link" href="${escapeHTML(link)}"
+                 target="_blank" rel="noopener noreferrer">Buka</a>`
+            : ""}
+          <button type="button" class="secondary mini"
+            data-link="${index}">${link ? "Ubah" : "+ Link"}</button>
+        </div>
+      </div>
+    `;
+  }).join("");
 }
 
-$("#courseList").addEventListener("click", (event) => {
+$("#courseList").addEventListener("click", event => {
   const button = event.target.closest("button[data-action]");
   if (!button) return;
 
@@ -220,14 +228,15 @@ $("#courseList").addEventListener("click", (event) => {
   if (action === "open") openMeetings(id);
   if (action === "edit") openCourseForm(course);
 
-  if (action === "delete" && confirm(`Hapus mata kuliah "${course.name}"?`)) {
-    courses = courses.filter((item) => item.id !== id);
+  if (action === "delete" &&
+      confirm(`Hapus mata kuliah "${course.name}"?`)) {
+    courses = courses.filter(item => item.id !== id);
     saveCourses();
     render();
   }
 });
 
-$("#meetingList").addEventListener("change", (event) => {
+$("#meetingList").addEventListener("change", event => {
   const checkbox = event.target;
 
   if (!checkbox.matches("input[data-meeting]")) return;
@@ -254,6 +263,48 @@ $("#markAll").addEventListener("click", () => {
   renderMeetings();
 });
 
+function cleanURL(value) {
+  const text = value.trim();
+  if (!text) return "";
+
+  try {
+    const url = new URL(/^https?:\/\//i.test(text) ? text : `https://${text}`);
+    return /^https?:$/.test(url.protocol) ? url.href : null;
+  } catch {
+    return null;
+  }
+}
+
+$("#meetingList").addEventListener("click", event => {
+  const button = event.target.closest("button[data-link]");
+  if (!button) return;
+
+  const course = getCourse(activeCourseId);
+  if (!course) return;
+
+  const index = Number(button.dataset.link);
+  course.links = Array.from(
+    { length: course.meetings.length },
+    (_, i) => course.links?.[i] ?? ""
+  );
+
+  const input = prompt(
+    `Tempel link laporan Pertemuan ${index + 1} (kosongkan untuk hapus):`,
+    course.links[index]
+  );
+  if (input === null) return;
+
+  const link = cleanURL(input);
+  if (link === null) {
+    alert("Link tidak valid. Pakai link yang diawali http:// atau https://");
+    return;
+  }
+
+  course.links[index] = link;
+  saveCourses();
+  renderMeetings();
+});
+
 function closeMeetingModal() {
   $("#meetingModal").classList.remove("show");
   activeCourseId = null;
@@ -262,15 +313,15 @@ function closeMeetingModal() {
 $("#closeMeeting").addEventListener("click", closeMeetingModal);
 $("#doneMeeting").addEventListener("click", closeMeetingModal);
 
-$("#courseModal").addEventListener("click", (event) => {
+$("#courseModal").addEventListener("click", event => {
   if (event.target === $("#courseModal")) closeCourseForm();
 });
 
-$("#meetingModal").addEventListener("click", (event) => {
+$("#meetingModal").addEventListener("click", event => {
   if (event.target === $("#meetingModal")) closeMeetingModal();
 });
 
-document.addEventListener("keydown", (event) => {
+document.addEventListener("keydown", event => {
   if (event.key !== "Escape") return;
   closeCourseForm();
   closeMeetingModal();
@@ -281,16 +332,14 @@ $("#themeButton").addEventListener("click", () => {
 
   localStorage.setItem(
     "laprak-theme",
-    document.body.classList.contains("dark") ? "dark" : "light",
+    document.body.classList.contains("dark") ? "dark" : "light"
   );
 });
 
 const savedTheme = localStorage.getItem("laprak-theme");
 
-if (
-  savedTheme === "dark" ||
-  (!savedTheme && matchMedia("(prefers-color-scheme: dark)").matches)
-) {
+if (savedTheme === "dark" ||
+    (!savedTheme && matchMedia("(prefers-color-scheme: dark)").matches)) {
   document.body.classList.add("dark");
 }
 

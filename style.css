@@ -316,7 +316,7 @@ input:focus-visible {
 
 .meeting-list {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: 1fr;
   gap: 10px;
   margin-top: 16px;
 }
@@ -331,11 +331,11 @@ input:focus-visible {
 .meeting {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 12px;
-  padding: 12px 14px;
+  padding: 10px 14px;
   border: 1px solid var(--line);
   border-radius: 12px;
-  cursor: pointer;
   font-weight: 500;
   transition:
     background-color 0.2s,
@@ -390,6 +390,44 @@ input:focus-visible {
   }
 }
 
+.meeting-check {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+  padding: 4px 0;
+  cursor: pointer;
+}
+
+.meeting-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+button.mini {
+  font-size: 12px;
+  padding: 6px 12px;
+  border-radius: 10px;
+  min-height: 0;
+}
+
+.open-link {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 7px 12px;
+  border-radius: 10px;
+  background: var(--accent);
+  color: var(--on-accent);
+  text-decoration: none;
+}
+
+.open-link:hover {
+  opacity: 0.9;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -416,6 +454,9 @@ input:focus-visible {
   }
 }
 
+/* ===== Ornamen (semua pakai warna accent) ===== */
+
+/* lingkaran lembut di pojok layar */
 body::before,
 body::after {
   content: "";
@@ -460,6 +501,7 @@ body::after {
   z-index: -1;
 }
 
+/* garis pendek di samping judul bagian daftar */
 .toolbar h2::before {
   content: "";
   display: inline-block;
@@ -471,6 +513,7 @@ body::after {
   vertical-align: -3px;
 }
 
+/* lingkaran konsentris di kartu progres keseluruhan */
 .stat {
   position: relative;
   overflow: hidden;
@@ -495,6 +538,7 @@ body::after {
   opacity: 0.22;
 }
 
+/* sudut dekoratif di kartu mata kuliah */
 .course-card {
   position: relative;
   overflow: hidden;
@@ -521,6 +565,7 @@ body::after {
   transform: scale(1.35);
 }
 
+/* ikon di tampilan kosong */
 .empty::before {
   content: "";
   display: block;
