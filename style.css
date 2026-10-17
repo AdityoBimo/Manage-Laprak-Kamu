@@ -355,11 +355,19 @@ input:focus-visible {
   background: var(--tint);
   border-color: transparent;
 }
-.meeting.done {
+.meeting.done .meeting-check,
+.meeting.done .meeting-files,
+.meeting.done .meeting-link > :not(.submit-pill) {
   opacity: 0.6;
+  transition: opacity 0.2s;
 }
-.meeting.done:hover,
-.meeting.done:focus-within {
+
+.meeting.done:hover .meeting-check,
+.meeting.done:hover .meeting-files,
+.meeting.done:hover .meeting-link > :not(.submit-pill),
+.meeting.done:focus-within .meeting-check,
+.meeting.done:focus-within .meeting-files,
+.meeting.done:focus-within .meeting-link > :not(.submit-pill) {
   opacity: 1;
 }
 
@@ -476,6 +484,53 @@ button.mini {
 
 .open-link:hover {
   opacity: 0.9;
+}
+
+.pending {
+  display: block;
+  margin-top: 2px;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 9px;
+  border-radius: 99px;
+  background: var(--tint);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.submit-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.submit-pill input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+}
+.submit-pill:hover {
+  background: var(--tint);
+}
+.submit-pill.disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.submit-pill.disabled:hover {
+  background: transparent;
 }
 
 @media (prefers-reduced-motion: reduce) {

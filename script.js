@@ -110,6 +110,12 @@ function completedCount(course) {
   return course.meetings.filter(Boolean).length;
 }
 
+function submittedCount(course) {
+  return course.meetings.filter(
+    (done, index) => done && course.submitted?.[index],
+  ).length;
+}
+
 function percentage(course) {
   return course.meetings.length
     ? Math.round((completedCount(course) / course.meetings.length) * 100)
@@ -163,6 +169,7 @@ function render() {
       const done = completedCount(course);
       const progress = percentage(course);
       const next = course.meetings.indexOf(false);
+      const sent = submittedCount(course);
 
       return `
       <article class="course-card ${progress === 100 ? "complete" : ""}">
@@ -171,6 +178,7 @@ function render() {
             <h3>${escapeHTML(course.name)}</h3>
             <span class="muted">
               ${done} dari ${course.meetings.length} pertemuan selesai
+              · ${sent} dikumpulkan
             </span>
           </div>
           <strong>${progress}%</strong>
@@ -187,6 +195,11 @@ function render() {
               : `Berikutnya: Pertemuan ${next + 1}`
           }
         </span>
+        ${
+          done > sent
+            ? `<span class="muted pending">${done - sent} belum dikumpulkan</span>`
+            : ""
+        }
 
         <div class="card-actions">
           <button data-action="open" data-id="${course.id}">Checklist</button>
@@ -249,6 +262,10 @@ $("#courseForm").addEventListener("submit", (event) => {
       { length: count },
       (_, index) => oldLinks[index] ?? "",
     );
+    const oldSubmitted = course.submitted ?? [];
+    course.submitted = Array.from({ length: count }, (_, index) =>
+      Boolean(oldMeetings[index] && oldSubmitted[index]),
+    );
     deleteFilesWhere(course.id, (file) => file.meeting >= count).catch(
       () => {},
     );
@@ -258,6 +275,7 @@ $("#courseForm").addEventListener("submit", (event) => {
       name,
       meetings: Array(count).fill(false),
       links: Array(count).fill(""),
+      submitted: Array(count).fill(false),
     });
   }
 
@@ -289,12 +307,13 @@ function renderMeetings() {
       : "Tandai semua";
 
   $("#meetingSummary").textContent =
-    `${completedCount(course)} dari ${course.meetings.length} selesai`;
+    `${completedCount(course)} dari ${course.meetings.length} selesai · ${submittedCount(course)} dikumpulkan`;
 
   $("#meetingList").innerHTML = course.meetings
     .map((done, index) => {
       const link = course.links?.[index] || "";
       const files = fileCache.filter((file) => file.meeting === index);
+      const sent = Boolean(course.submitted?.[index]);
 
       return `
       <div class="meeting ${done ? "done" : ""}">
@@ -302,9 +321,16 @@ function renderMeetings() {
           <input type="checkbox" data-meeting="${index}"
             ${done ? "checked" : ""}>
           <span>Pertemuan ${index + 1}</span>
+          ${done && !sent ? `<small class="badge">Belum dikumpulkan</small>` : ""}
         </label>
 
         <div class="meeting-link">
+          <label class="submit-pill ${done ? "" : "disabled"}"
+            title="${done ? "" : "Selesaikan pertemuan dulu"}">
+            <input type="checkbox" data-submit="${index}"
+              ${sent ? "checked" : ""} ${done ? "" : "disabled"}>
+            Dikumpulkan
+          </label>
           ${
             link
               ? `<a class="open-link" href="${escapeHTML(link)}"
@@ -369,12 +395,26 @@ $("#courseList").addEventListener("click", (event) => {
 $("#meetingList").addEventListener("change", (event) => {
   const checkbox = event.target;
 
-  if (!checkbox.matches("input[data-meeting]")) return;
+  const isMeeting = checkbox.matches("input[data-meeting]");
+  const isSubmit = checkbox.matches("input[data-submit]");
+  if (!isMeeting && !isSubmit) return;
 
   const course = getCourse(activeCourseId);
   if (!course) return;
 
-  course.meetings[Number(checkbox.dataset.meeting)] = checkbox.checked;
+  course.submitted = Array.from(
+    { length: course.meetings.length },
+    (_, i) => course.submitted?.[i] ?? false,
+  );
+
+  if (isMeeting) {
+    const index = Number(checkbox.dataset.meeting);
+    course.meetings[index] = checkbox.checked;
+    if (!checkbox.checked) course.submitted[index] = false;
+  } else {
+    const index = Number(checkbox.dataset.submit);
+    course.submitted[index] = course.meetings[index] && checkbox.checked;
+  }
 
   saveCourses();
   render();
@@ -387,6 +427,7 @@ $("#markAll").addEventListener("click", () => {
 
   const allDone = completedCount(course) === course.meetings.length;
   course.meetings = course.meetings.map(() => !allDone);
+  if (allDone) course.submitted = course.meetings.map(() => false);
 
   saveCourses();
   render();
