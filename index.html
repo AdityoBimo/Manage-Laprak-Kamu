@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Laprak Tracker</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+    <script src="script.js" defer></script>
+  </head>
+
+  <body>
+    <main class="container">
+      <header>
+        <div>
+          <h1>Management <mark>Laprak</mark> Kamu </h1>
+          <p>Pantau progres laporan praktikum kamu selama satu semester.</p>
+        </div>
+        <button
+          class="secondary"
+          id="themeButton"
+          aria-label="Ganti tema terang atau gelap"
+        >
+          Ganti tema
+        </button>
+      </header>
+
+      <section class="stats">
+        <div class="stat">
+          <span class="muted">Mata kuliah</span>
+          <strong id="courseCount">0</strong>
+        </div>
+        <div class="stat">
+          <span class="muted">Pertemuan selesai</span>
+          <strong id="doneCount">0/0</strong>
+        </div>
+        <div class="stat">
+          <span class="muted">Progres keseluruhan</span>
+          <strong id="overallProgress">0%</strong>
+        </div>
+      </section>
+
+      <section>
+        <div class="toolbar">
+          <div>
+            <h2>Praktikum yang di tambahkan</h2>
+            <span class="muted">Checklist setiap pertemuan praktikum.</span>
+          </div>
+          <button id="addButton">+ Tambah matkul</button>
+        </div>
+
+        <div class="course-list" id="courseList"></div>
+      </section>
+    </main>
+
+    <!-- tambah edit matkul ceunahh -->
+    <div class="modal-backdrop" id="courseModal">
+      <div class="modal">
+        <h2 id="courseModalTitle">Tambah mata kuliah</h2>
+
+        <form id="courseForm">
+          <div class="field">
+            <label for="courseName">Nama mata kuliah</label>
+            <input
+              id="courseName"
+              type="text"
+              autocomplete="off"
+              placeholder="Contoh: Praktikum Basis Data"
+              required
+            />
+          </div>
+
+          <div class="field">
+            <label for="meetingCount">Jumlah pertemuan</label>
+            <input
+              id="meetingCount"
+              type="number"
+              min="1"
+              max="100"
+              value="14"
+              required
+            />
+          </div>
+
+          <div class="modal-actions">
+            <button type="button" class="secondary" id="cancelCourse">
+              Batal
+            </button>
+            <button type="submit">Simpan</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- checklist -->
+    <div class="modal-backdrop" id="meetingModal">
+      <div class="modal">
+        <h2 id="meetingTitle">Checklist pertemuan</h2>
+        <p id="meetingSummary" class="muted"></p>
+
+        <div class="meeting-list" id="meetingList"></div>
+
+        <div class="modal-actions">
+          <button type="button" class="secondary" id="markAll">
+            Tandai semua
+          </button>
+          <button type="button" class="secondary" id="closeMeeting">
+            Tutup
+          </button>
+          <button type="button" id="doneMeeting">Done</button>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
