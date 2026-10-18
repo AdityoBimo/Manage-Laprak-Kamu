@@ -21,13 +21,104 @@
           <h1>Di <mark>Laprakin</mark> aja</h1>
           <p>Pantau progres laporan praktikum kamu selama satu semester.</p>
         </div>
-        <button
-          class="secondary"
-          id="themeButton"
-          aria-label="Ganti tema terang atau gelap"
-        >
-          Ganti tema
-        </button>
+        <div class="header-actions">
+          <div class="segmented" role="group" aria-label="Mode tampilan">
+            <button
+              type="button"
+              class="seg"
+              data-theme="light"
+              aria-pressed="false"
+            >
+              Light
+            </button>
+            <button
+              type="button"
+              class="seg"
+              data-theme="dark"
+              aria-pressed="false"
+            >
+              Dark
+            </button>
+          </div>
+
+          <div class="dropdown" id="paletteDropdown">
+            <button
+              type="button"
+              class="secondary dd-button"
+              id="paletteButton"
+              aria-haspopup="listbox"
+              aria-expanded="false"
+              aria-label="Pilih warna"
+            >
+              <span class="dot"></span>
+              <span id="paletteLabel">Hijau</span>
+              <span class="caret" aria-hidden="true"></span>
+            </button>
+            <div
+              class="dd-menu"
+              id="paletteMenu"
+              role="listbox"
+              aria-label="Warna"
+              hidden
+            >
+              <button
+                type="button"
+                role="option"
+                class="dd-item"
+                data-palette="hijau"
+                data-label="Hijau"
+                style="--sw: #3d8b78"
+                aria-selected="false"
+              >
+                <span class="dot"></span>Hijau
+              </button>
+              <button
+                type="button"
+                role="option"
+                class="dd-item"
+                data-palette="biru"
+                data-label="Biru"
+                style="--sw: #3b6fd4"
+                aria-selected="false"
+              >
+                <span class="dot"></span>Biru
+              </button>
+              <button
+                type="button"
+                role="option"
+                class="dd-item"
+                data-palette="ungu"
+                data-label="Ungu"
+                style="--sw: #6c5ce7"
+                aria-selected="false"
+              >
+                <span class="dot"></span>Ungu
+              </button>
+              <button
+                type="button"
+                role="option"
+                class="dd-item"
+                data-palette="pink"
+                data-label="Pink"
+                style="--sw: #d6457a"
+                aria-selected="false"
+              >
+                <span class="dot"></span>Pink
+              </button>
+              <button
+                type="button"
+                role="option"
+                class="dd-item"
+                data-palette="oranye"
+                data-label="Oranye"
+                style="--sw: #d9731f"
+                aria-selected="false"
+              >
+                <span class="dot"></span>Oranye
+              </button>
+            </div>
+          </div>
+        </div>
       </header>
 
       <section class="stats">

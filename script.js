@@ -591,22 +591,81 @@ document.addEventListener("keydown", (event) => {
   closeMeetingModal();
 });
 
-$("#themeButton").addEventListener("click", () => {
-  document.body.classList.toggle("dark");
+/* ===== Tema Light / Dark ===== */
+const modeButtons = [...document.querySelectorAll(".seg")];
 
-  localStorage.setItem(
-    "laprak-theme",
-    document.body.classList.contains("dark") ? "dark" : "light",
+function applyMode(mode) {
+  document.body.classList.toggle("dark", mode === "dark");
+
+  modeButtons.forEach((item) =>
+    item.setAttribute("aria-pressed", String(item.dataset.theme === mode)),
   );
+}
+
+$(".segmented").addEventListener("click", (event) => {
+  const button = event.target.closest(".seg");
+  if (!button) return;
+
+  applyMode(button.dataset.theme);
+  localStorage.setItem("laprak-theme", button.dataset.theme);
 });
 
 const savedTheme = localStorage.getItem("laprak-theme");
 
-if (
+applyMode(
   savedTheme === "dark" ||
-  (!savedTheme && matchMedia("(prefers-color-scheme: dark)").matches)
-) {
-  document.body.classList.add("dark");
+    (!savedTheme && matchMedia("(prefers-color-scheme: dark)").matches)
+    ? "dark"
+    : "light",
+);
+
+/* ===== Dropdown warna ===== */
+const PALETTE_KEY = "laprak-palette";
+const paletteItems = [...document.querySelectorAll(".dd-item")];
+const paletteButton = $("#paletteButton");
+const paletteMenu = $("#paletteMenu");
+
+function applyPalette(name) {
+  const item =
+    paletteItems.find((entry) => entry.dataset.palette === name) ||
+    paletteItems[0];
+
+  if (item.dataset.palette === "hijau") delete document.body.dataset.palette;
+  else document.body.dataset.palette = item.dataset.palette;
+
+  paletteItems.forEach((entry) =>
+    entry.setAttribute("aria-selected", String(entry === item)),
+  );
+
+  $("#paletteLabel").textContent = item.dataset.label;
+  paletteButton.style.setProperty("--sw", item.style.getPropertyValue("--sw"));
 }
+
+function setMenu(open) {
+  paletteMenu.hidden = !open;
+  paletteButton.setAttribute("aria-expanded", String(open));
+}
+
+paletteButton.addEventListener("click", () => setMenu(paletteMenu.hidden));
+
+paletteMenu.addEventListener("click", (event) => {
+  const item = event.target.closest(".dd-item");
+  if (!item) return;
+
+  applyPalette(item.dataset.palette);
+  localStorage.setItem(PALETTE_KEY, item.dataset.palette);
+  setMenu(false);
+  paletteButton.focus();
+});
+
+document.addEventListener("click", (event) => {
+  if (!$("#paletteDropdown").contains(event.target)) setMenu(false);
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") setMenu(false);
+});
+
+applyPalette(localStorage.getItem(PALETTE_KEY));
 
 render();

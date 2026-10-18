@@ -728,3 +728,207 @@ body::after {
     left: -10px;
   }
 }
+
+/* ===== Palet warna (tiap palet satu warna) ===== */
+
+body[data-palette="biru"] {
+  --bg: #f1f5fb;
+  --ink: #1d2a3f;
+  --muted: #62748d;
+  --accent: #3b6fd4;
+  --tint: #3b6fd417;
+  --line: #dce5f2;
+}
+
+body.dark[data-palette="biru"] {
+  --bg: #11161f;
+  --card: #1a212d;
+  --ink: #e3eaf5;
+  --muted: #8b9bb3;
+  --accent: #7aa5f2;
+  --on-accent: #0c1a33;
+  --tint: #7aa5f21c;
+  --line: #29323f;
+}
+
+body[data-palette="ungu"] {
+  --bg: #f5f3fc;
+  --ink: #251f3d;
+  --muted: #716b8c;
+  --accent: #6c5ce7;
+  --tint: #6c5ce717;
+  --line: #e4e0f2;
+}
+
+body.dark[data-palette="ungu"] {
+  --bg: #14121c;
+  --card: #1d1a28;
+  --ink: #ebe8f7;
+  --muted: #9a96b5;
+  --accent: #9a8dff;
+  --on-accent: #14102e;
+  --tint: #9a8dff1c;
+  --line: #2d2a3d;
+}
+
+body[data-palette="pink"] {
+  --bg: #fcf3f6;
+  --ink: #3a1f2b;
+  --muted: #8a6575;
+  --accent: #d6457a;
+  --tint: #d6457a17;
+  --line: #f2dde5;
+}
+
+body.dark[data-palette="pink"] {
+  --bg: #1a1216;
+  --card: #261a20;
+  --ink: #f7e8ee;
+  --muted: #b79aa7;
+  --accent: #f07aa3;
+  --on-accent: #2e0b19;
+  --tint: #f07aa31c;
+  --line: #3a272f;
+}
+
+body[data-palette="oranye"] {
+  --bg: #fcf6ef;
+  --ink: #33261a;
+  --muted: #86705b;
+  --accent: #d9731f;
+  --tint: #d9731f17;
+  --line: #f0e2d1;
+}
+
+body.dark[data-palette="oranye"] {
+  --bg: #181410;
+  --card: #231d17;
+  --ink: #f5ebdf;
+  --muted: #b39d85;
+  --accent: #f19a4d;
+  --on-accent: #2c1604;
+  --tint: #f19a4d1c;
+  --line: #38302a;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.segmented {
+  display: flex;
+  gap: 2px;
+  padding: 4px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+
+button.seg {
+  min-height: 36px;
+  padding: 6px 16px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--muted);
+  box-shadow: none;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+button.seg:hover {
+  color: var(--ink);
+  opacity: 1;
+}
+button.seg[aria-pressed="true"] {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.dropdown {
+  position: relative;
+}
+
+button.dd-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 44px;
+  padding: 8px 14px;
+  font-size: 13px;
+}
+
+.dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--sw);
+  flex-shrink: 0;
+}
+
+.caret {
+  width: 7px;
+  height: 7px;
+  margin: -3px 0 0 2px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg);
+  transition: transform 0.2s;
+}
+
+.dd-button[aria-expanded="true"] .caret {
+  transform: rotate(225deg);
+  margin-top: 3px;
+}
+
+.dd-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  z-index: 20;
+  min-width: 170px;
+  padding: 6px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  animation: rise 0.2s ease;
+}
+
+button.dd-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 0;
+  padding: 9px 12px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--ink);
+  box-shadow: none;
+  text-align: left;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+button.dd-item:hover {
+  background: var(--tint);
+  opacity: 1;
+}
+button.dd-item[aria-selected="true"] {
+  background: var(--tint);
+}
+
+button.dd-item[aria-selected="true"]::after {
+  content: "";
+  width: 5px;
+  height: 9px;
+  margin: -2px 2px 0 auto;
+  border-right: 2px solid var(--accent);
+  border-bottom: 2px solid var(--accent);
+  transform: rotate(45deg);
+}
