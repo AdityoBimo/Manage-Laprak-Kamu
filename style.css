@@ -357,17 +357,19 @@ input:focus-visible {
 }
 .meeting.done .meeting-check,
 .meeting.done .meeting-files,
-.meeting.done .meeting-link > :not(.submit-pill) {
+.meeting.done .meeting-link > :not(.submit-pill):not(.submit-link) {
   opacity: 0.6;
   transition: opacity 0.2s;
 }
 
 .meeting.done:hover .meeting-check,
 .meeting.done:hover .meeting-files,
-.meeting.done:hover .meeting-link > :not(.submit-pill),
+.meeting.done:hover .meeting-link > :not(.submit-pill):not(.submit-link),
 .meeting.done:focus-within .meeting-check,
 .meeting.done:focus-within .meeting-files,
-.meeting.done:focus-within .meeting-link > :not(.submit-pill) {
+.meeting.done:focus-within
+  .meeting-link
+  > :not(.submit-pill):not(.submit-link) {
   opacity: 1;
 }
 
@@ -531,6 +533,27 @@ button.mini {
 }
 .submit-pill.disabled:hover {
   background: transparent;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+.card-actions .open-link {
+  display: inline-flex;
+  align-items: center;
+  font-size: 13px;
+  padding: 8px 15px;
+  border-radius: 12px;
+}
+
+.meeting-submit {
+  flex-basis: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding-top: 2px;
 }
 
 @media (prefers-reduced-motion: reduce) {

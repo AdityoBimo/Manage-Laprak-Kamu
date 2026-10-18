@@ -223,6 +223,7 @@ function openCourseForm(course = null) {
 
   $("#courseName").value = course?.name ?? "";
   $("#meetingCount").value = course?.meetings.length ?? 14;
+  $("#submitLink").value = course?.submitUrl ?? "";
 
   $("#courseModal").classList.add("show");
   $("#courseName").select();
@@ -242,9 +243,15 @@ $("#courseForm").addEventListener("submit", (event) => {
 
   const name = $("#courseName").value.trim();
   const count = Number($("#meetingCount").value);
+  const submitUrl = cleanURL($("#submitLink").value);
 
   if (!name || !Number.isInteger(count) || count < 1 || count > 100) {
     alert("Isi nama matkul dan jumlah pertemuan yang valid.");
+    return;
+  }
+
+  if (submitUrl === null) {
+    alert("Link pengumpulan tidak valid. Tempel link Google Form yang benar.");
     return;
   }
 
@@ -254,6 +261,7 @@ $("#courseForm").addEventListener("submit", (event) => {
     const oldLinks = course.links ?? [];
 
     course.name = name;
+    course.submitUrl = submitUrl;
     course.meetings = Array.from(
       { length: count },
       (_, index) => oldMeetings[index] ?? false,
@@ -273,6 +281,7 @@ $("#courseForm").addEventListener("submit", (event) => {
     courses.push({
       id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
       name,
+      submitUrl,
       meetings: Array(count).fill(false),
       links: Array(count).fill(""),
       submitted: Array(count).fill(false),
@@ -311,7 +320,6 @@ function renderMeetings() {
 
   $("#meetingList").innerHTML = course.meetings
     .map((done, index) => {
-      const link = course.links?.[index] || "";
       const files = fileCache.filter((file) => file.meeting === index);
       const sent = Boolean(course.submitted?.[index]);
 
@@ -325,20 +333,6 @@ function renderMeetings() {
         </label>
 
         <div class="meeting-link">
-          <label class="submit-pill ${done ? "" : "disabled"}"
-            title="${done ? "" : "Selesaikan pertemuan dulu"}">
-            <input type="checkbox" data-submit="${index}"
-              ${sent ? "checked" : ""} ${done ? "" : "disabled"}>
-            Dikumpulkan
-          </label>
-          ${
-            link
-              ? `<a class="open-link" href="${escapeHTML(link)}"
-                 target="_blank" rel="noopener noreferrer">Buka</a>`
-              : ""
-          }
-          <button type="button" class="secondary mini"
-            data-link="${index}">${link ? "Ubah" : "+ Link"}</button>
           <button type="button" class="secondary mini"
             data-upload="${index}">Upload</button>
         </div>
@@ -367,6 +361,23 @@ function renderMeetings() {
         `
             : ""
         }
+
+        <div class="meeting-submit">
+          ${
+            course.submitUrl
+              ? `<a class="open-link submit-link"
+                 href="${escapeHTML(course.submitUrl)}"
+                 target="_blank" rel="noopener noreferrer">Link Pengumpulan</a>`
+              : `<button type="button" class="secondary mini submit-link"
+                 data-set-submit>Link Pengumpulan</button>`
+          }
+          <label class="submit-pill ${done ? "" : "disabled"}"
+            title="${done ? "" : "Selesaikan pertemuan dulu"}">
+            <input type="checkbox" data-submit="${index}"
+              ${sent ? "checked" : ""} ${done ? "" : "disabled"}>
+            Dikumpulkan
+          </label>
+        </div>
       </div>
     `;
     })
@@ -447,32 +458,27 @@ function cleanURL(value) {
 }
 
 $("#meetingList").addEventListener("click", (event) => {
-  const button = event.target.closest("button[data-link]");
-  if (!button) return;
+  if (!event.target.closest("button[data-set-submit]")) return;
 
   const course = getCourse(activeCourseId);
   if (!course) return;
 
-  const index = Number(button.dataset.link);
-  course.links = Array.from(
-    { length: course.meetings.length },
-    (_, i) => course.links?.[i] ?? "",
-  );
-
   const input = prompt(
-    `Tempel link laporan Pertemuan ${index + 1} (kosongkan untuk hapus):`,
-    course.links[index],
+    "Tempel link pengumpulan (Google Form) untuk mata kuliah ini:",
+    "",
   );
   if (input === null) return;
 
-  const link = cleanURL(input);
-  if (link === null) {
+  const url = cleanURL(input);
+  if (url === null) {
     alert("Link tidak valid. Pakai link yang diawali http:// atau https://");
     return;
   }
+  if (!url) return;
 
-  course.links[index] = link;
+  course.submitUrl = url;
   saveCourses();
+  render();
   renderMeetings();
 });
 
